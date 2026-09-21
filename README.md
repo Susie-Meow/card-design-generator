@@ -1,5 +1,7 @@
 # 卡面设计生成器
 
+[English](./README.en.md)
+
 按 ISO 7810 ID-1 尺寸做卡面的纯前端工具。传一张图，摆上 logo，导出一张静态 PNG。
 
 在线试用：https://susie-meow.github.io/card-design-generator/
