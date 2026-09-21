@@ -494,11 +494,11 @@ input[type=color]:disabled{opacity:.8;cursor:not-allowed;border-style:dashed}
       <div>
         <div class="lbl" data-i18n="bench.title">卡面预览</div>
       </div>
-      <div class="dim" id="dimReadout">85.60 × 53.98 mm · 1036 × 640 px</div>
+      <div class="dim" id="dimReadout">85.60 × 53.98 mm · 1536 × 969 px</div>
     </div>
 
     <div class="stage-shell" id="stageShell">
-      <canvas id="stage" width="1036" height="640"></canvas>
+      <canvas id="stage" width="1536" height="969"></canvas>
       <div class="empty" id="emptyState">
         <div class="big" data-i18n="empty.title">上传一张图片作为卡面</div>
         <div class="small" data-i18n="empty.sub">图片会自动按 ISO 7810 ID-1 卡面比例匹配并居中，之后可在裁剪里二次调整构图。</div>
@@ -713,7 +713,7 @@ input[type=color]:disabled{opacity:.8;cursor:not-allowed;border-style:dashed}
 "use strict";
 /* ================= 常量 ================= */
 const RATIO = 85.60 / 53.98;
-const EXPORT_W = 1036, EXPORT_H = 640;
+const EXPORT_W = 1536, EXPORT_H = 969;
 
 const state = {
   bgImage:null, bgSource:null, hasBg:false,
@@ -756,11 +756,11 @@ const I18N = {
     "adj.removeBg":"去除背景底色","adj.tolerance":"去底容差",
     "adj.stroke":"外描边","adj.strokeWidth":"描边宽度","adj.strokeColor":"描边颜色",
     "adj.strokeAuto":"自动对比色","adj.strokeColorPick":"选择描边颜色",
-    "adj.strokeHint":"描边沿 logo 轮廓向外扩展，不覆盖主体，也不会改变 logo 的形状与比例。宽度以导出画布像素（1036 × 640）为单位。",
+    "adj.strokeHint":"描边沿 logo 轮廓向外扩展，不覆盖主体，也不会改变 logo 的形状与比例。宽度以导出画布像素（1536 × 969）为单位。",
     "adj.up":"上移一层","adj.down":"下移一层","adj.delete":"删除",
     "layers.empty":"暂无 logo",
     "toast.fitted":"已重新匹配卡面尺寸","toast.refitted":"已重新匹配参考图尺寸","toast.cropped":"裁剪已应用",
-    "toast.exported":"已导出 1036 × 640 PNG","toast.cleared":"已清空画布",
+    "toast.exported":"已导出 1536 × 969 PNG","toast.cleared":"已清空画布",
     "toast.noImage":"请先上传卡面图片","toast.noRef":"请先上传参考图","toast.notImage":"请选择图片文件",
     "toast.loadFail":"图片加载失败，请换一张","toast.langSaved":"已切换为中文",
     "confirm.clear":"确定清空画布吗？此操作无法撤销。",
@@ -798,11 +798,11 @@ const I18N = {
     "adj.removeBg":"Remove background colour","adj.tolerance":"Tolerance",
     "adj.stroke":"Outline","adj.strokeWidth":"Outline width","adj.strokeColor":"Outline colour",
     "adj.strokeAuto":"Auto contrast","adj.strokeColorPick":"Pick outline colour",
-    "adj.strokeHint":"The outline grows outward from the logo silhouette — it never covers the artwork or changes its shape or proportions. Width is measured in export-canvas pixels (1036 × 640).",
+    "adj.strokeHint":"The outline grows outward from the logo silhouette — it never covers the artwork or changes its shape or proportions. Width is measured in export-canvas pixels (1536 × 969).",
     "adj.up":"Move up","adj.down":"Move down","adj.delete":"Delete",
     "layers.empty":"No logos yet",
     "toast.fitted":"Refitted to the card ratio","toast.refitted":"Reference refitted to the card ratio","toast.cropped":"Crop applied",
-    "toast.exported":"Exported 1036 × 640 PNG","toast.cleared":"Canvas cleared",
+    "toast.exported":"Exported 1536 × 969 PNG","toast.cleared":"Canvas cleared",
     "toast.noImage":"Upload a card image first","toast.noRef":"Upload a reference image first","toast.notImage":"That is not an image file",
     "toast.loadFail":"Could not load that image, try another","toast.langSaved":"Switched to English",
     "confirm.clear":"Clear the canvas? This cannot be undone.",
@@ -1088,8 +1088,8 @@ function strokeSprite(logo, dispW, dispH){
   const src = logo.processed || logo.img;
   const sw = src.naturalWidth || src.width || 1, sh = src.naturalHeight || src.height || 1;
 
-  // 工作分辨率：贴近显示尺寸，上限 640 以控制计算量
-  const k = clamp(Math.max(dispW, dispH), 96, 640) / Math.max(sw, sh);
+  // 工作分辨率：贴近显示尺寸，上限 1024 以控制计算量
+  const k = clamp(Math.max(dispW, dispH), 96, 1024) / Math.max(sw, sh);
   const rw = Math.max(2, Math.round(sw*k)), rh = Math.max(2, Math.round(sh*k));
 
   const key = [rExp, color, rw, rh, logo._srcVer||0].join("|");
@@ -1525,8 +1525,8 @@ function updateCropReadout(){
   const wmm = (crop.boxW/s) * (85.6/(imgNaturalW(crop.img)));
   $("cropReadout").textContent =
     lang==="zh"
-      ? "选区 " + Math.round(crop.boxW/s) + " × " + Math.round(crop.boxH/s) + " px · 输出 1036 × 640"
-      : "Selection " + Math.round(crop.boxW/s) + " × " + Math.round(crop.boxH/s) + " px · output 1036 × 640";
+      ? "选区 " + Math.round(crop.boxW/s) + " × " + Math.round(crop.boxH/s) + " px · 输出 " + EXPORT_W + " × " + EXPORT_H
+      : "Selection " + Math.round(crop.boxW/s) + " × " + Math.round(crop.boxH/s) + " px · output " + EXPORT_W + " × " + EXPORT_H;
 }
 function imgNaturalW(img){ return img.naturalWidth||img.width||1; }
 
