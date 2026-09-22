@@ -290,6 +290,20 @@ header.top{
   font-size:var(--fs-sm);font-weight:500;color:var(--steel);margin-bottom:4px;
 }
 .field-h .v{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.position-grid,.size-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.size-grid{margin-top:5px}
+.coord-input{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px;
+  height:32px;padding:0 9px;border:1px solid var(--rule-strong);border-radius:var(--radius);
+  background:var(--panel);color:var(--steel);font-size:var(--fs-sm);
+}
+.coord-input:focus-within{border-color:var(--signal);box-shadow:0 0 0 1px var(--signal)}
+.coord-input .axis{font-weight:700;color:var(--ink-2)}
+.coord-input .unit{font-size:var(--fs-xs);color:var(--steel-2)}
+.coord-input input{
+  width:100%;min-width:0;padding:0;border:0;outline:0;background:transparent;
+  color:var(--ink);font-weight:600;text-align:right;font-variant-numeric:tabular-nums;
+}
 /* 命中区 26px（轨道仍 3px）：原先 16px 在触屏上难以拖动 */
 input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;
@@ -590,6 +604,33 @@ input[type=color]:disabled{opacity:.8;cursor:not-allowed;border-style:dashed}
         <div class="field">
           <div class="field-h"><span data-i18n="adj.size">大小</span><span class="v" id="sizeVal">100%</span></div>
           <input type="range" id="sizeRange" min="5" max="300" step="1" value="100">
+          <div class="size-grid">
+            <label class="coord-input">
+              <span class="axis">W</span>
+              <input type="number" id="sizeWidth" min="1" step="1" value="1" data-i18n-aria="adj.width" aria-label="Logo 宽度">
+              <span class="unit">px</span>
+            </label>
+            <label class="coord-input">
+              <span class="axis">H</span>
+              <input type="number" id="sizeHeight" min="1" step="1" value="1" data-i18n-aria="adj.height" aria-label="Logo 高度">
+              <span class="unit">px</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-h"><span data-i18n="adj.position">位置</span></div>
+          <div class="position-grid">
+            <label class="coord-input">
+              <span class="axis">X</span>
+              <input type="number" id="positionX" step="1" value="0" data-i18n-aria="adj.positionX" aria-label="Logo 左上角 X 坐标">
+              <span class="unit">px</span>
+            </label>
+            <label class="coord-input">
+              <span class="axis">Y</span>
+              <input type="number" id="positionY" step="1" value="0" data-i18n-aria="adj.positionY" aria-label="Logo 左上角 Y 坐标">
+              <span class="unit">px</span>
+            </label>
+          </div>
         </div>
         <div class="field">
           <div class="field-h"><span data-i18n="adj.opacity">不透明度</span><span class="v" id="opacityVal">100%</span></div>
@@ -751,7 +792,8 @@ const I18N = {
     "ref.drop.title":"拖拽图片到此处，或点击选择","ref.drop.hint":"JPG、PNG、WebP、SVG",
     "ref.drop.aria":"上传参考图","ref.show":"显示参考图",
     "ref.tip":"参考图按 1.586 : 1 匹配后<b>叠在卡面之上、logo 之下</b>，只用于对位和比稿，<b>不会出现在导出的 PNG 里</b>。",
-    "adj.empty":"点击卡面上的 logo 进行编辑","adj.size":"大小","adj.opacity":"不透明度",
+    "adj.empty":"点击卡面上的 logo 进行编辑","adj.size":"大小","adj.width":"Logo 宽度","adj.height":"Logo 高度","adj.position":"位置",
+    "adj.positionX":"Logo 左上角 X 坐标","adj.positionY":"Logo 左上角 Y 坐标","adj.opacity":"不透明度",
     "adj.rotation":"旋转","adj.nudge":"方向键微调位置。",
     "adj.removeBg":"去除背景底色","adj.tolerance":"去底容差",
     "adj.stroke":"外描边","adj.strokeWidth":"描边宽度","adj.strokeColor":"描边颜色",
@@ -793,7 +835,8 @@ const I18N = {
     "ref.drop.title":"Drop an image here, or click to choose","ref.drop.hint":"JPG, PNG, WebP, SVG",
     "ref.drop.aria":"Upload the reference image","ref.show":"Show reference",
     "ref.tip":"The reference is fitted to 1.586 : 1 and <b>laid over the card, beneath the logos</b>, for alignment and comparison only — it is <b>never included in the exported PNG</b>.",
-    "adj.empty":"Click a logo on the card to edit it","adj.size":"Size","adj.opacity":"Opacity",
+    "adj.empty":"Click a logo on the card to edit it","adj.size":"Size","adj.width":"Logo width","adj.height":"Logo height","adj.position":"Position",
+    "adj.positionX":"Logo top-left X coordinate","adj.positionY":"Logo top-left Y coordinate","adj.opacity":"Opacity",
     "adj.rotation":"Rotation","adj.nudge":"Arrow keys nudge the position.",
     "adj.removeBg":"Remove background colour","adj.tolerance":"Tolerance",
     "adj.stroke":"Outline","adj.strokeWidth":"Outline width","adj.strokeColor":"Outline colour",
@@ -926,16 +969,56 @@ async function handleRefFile(file){
 }
 
 /* ================= Logo ================= */
-async function addLogoFromUrl(url, name){
+function svgLength(value){
+  const text = String(value||"").trim();
+  if(!text || text.endsWith("%")) return 0;
+  const valueNumber = Number.parseFloat(text);
+  return Number.isFinite(valueNumber) && valueNumber > 0 ? valueNumber : 0;
+}
+
+async function prepareLogoFile(file){
+  if(file.type !== "image/svg+xml" && !/\.svg$/i.test(file.name||"")){
+    return { url:URL.createObjectURL(file), size:null };
+  }
+  try{
+    const doc = new DOMParser().parseFromString(await file.text(), "image/svg+xml");
+    const svg = doc.documentElement;
+    if(svg.localName !== "svg" || doc.querySelector("parsererror")) throw new Error("invalid svg");
+
+    const viewBox = (svg.getAttribute("viewBox")||"").trim().split(/[\s,]+/).map(Number);
+    const vbW = viewBox.length===4 && Number.isFinite(viewBox[2]) && viewBox[2]>0 ? viewBox[2] : 0;
+    const vbH = viewBox.length===4 && Number.isFinite(viewBox[3]) && viewBox[3]>0 ? viewBox[3] : 0;
+    const attrW = svgLength(svg.getAttribute("width"));
+    const attrH = svgLength(svg.getAttribute("height"));
+    const ratioW = vbW || attrW || 300;
+    const ratioH = vbH || attrH || 150;
+
+    // 没有明确像素尺寸的 SVG（常见于仅含 viewBox 或 width="100%"）在部分浏览器中
+    // naturalWidth / naturalHeight 会是 0。补上只影响视口、不改变图形比例的固有尺寸。
+    if(!attrW || !attrH){
+      const scale = 1024/Math.max(ratioW, ratioH);
+      svg.setAttribute("width", String(Math.max(1, Math.round(ratioW*scale))));
+      svg.setAttribute("height", String(Math.max(1, Math.round(ratioH*scale))));
+    }
+    const normalized = new Blob([new XMLSerializer().serializeToString(doc)], {type:"image/svg+xml"});
+    return { url:URL.createObjectURL(normalized), size:{width:ratioW, height:ratioH} };
+  }catch(e){
+    return { url:URL.createObjectURL(file), size:null };
+  }
+}
+
+async function addLogoFromUrl(url, name, sourceSize){
   let img;
   try{ img = await loadImage(url); }catch(e){ toast(t("toast.loadFail")); return; }
-  const maxDim = Math.max(img.naturalWidth||img.width, img.naturalHeight||img.height, 1);
+  const sourceW = Number(sourceSize?.width) || img.naturalWidth || img.width || 300;
+  const sourceH = Number(sourceSize?.height) || img.naturalHeight || img.height || 150;
+  const maxDim = Math.max(sourceW, sourceH, 1);
   const s = (EXPORT_W*0.42)/maxDim;
-  const bw = (img.naturalWidth||img.width)*s, bh = (img.naturalHeight||img.height)*s;
+  const bw = sourceW*s, bh = sourceH*s;
   const logo = {
     id:nid(), name:name||"Logo", img, processed:null, srcUrl:url,
     x:EXPORT_W/2, y:EXPORT_H/2,            // 中心点锚点
-    baseW:bw, baseH:bh,
+    baseW:bw, baseH:bh, sourceW, sourceH,
     scale:1, rotation:0, opacity:1, removeBg:false, tolerance:24,
     // 描边：默认开启、自动对比色，宽度随 logo 尺寸给出合理初值
     strokeOn:true, strokeWidth:Math.round(clamp(Math.min(bw,bh)*0.035, 3, 8)),
@@ -955,7 +1038,8 @@ async function addLogoFiles(fileList){
   const dz = $("logoDrop");
   dz.classList.add("busy");
   for(const f of files){
-    await addLogoFromUrl(URL.createObjectURL(f), f.name.replace(/\.[^.]+$/,""));
+    const prepared = await prepareLogoFile(f);
+    await addLogoFromUrl(prepared.url, f.name.replace(/\.[^.]+$/,""), prepared.size);
   }
   dz.classList.remove("busy");
   if(files.length > 1){
@@ -970,7 +1054,7 @@ function processRemoveBg(logo){
   logo._autoColor = null;
   if(!logo.removeBg){ logo.processed = null; return; }
   const img = logo.img;
-  const w = img.naturalWidth||img.width, h = img.naturalHeight||img.height;
+  const w = img.naturalWidth||img.width||logo.sourceW, h = img.naturalHeight||img.height||logo.sourceH;
   const c = document.createElement("canvas"); c.width=w; c.height=h;
   const cx = c.getContext("2d");
   cx.drawImage(img,0,0);
@@ -1056,7 +1140,8 @@ const STROKE_DARK = "#111A2B", STROKE_LIGHT = "#FFFFFF";
 function autoStrokeColor(logo){
   if(logo._autoColor) return logo._autoColor;
   const src = logo.processed || logo.img;
-  let w = src.naturalWidth || src.width || 0, h = src.naturalHeight || src.height || 0;
+  let w = src.naturalWidth || src.width || logo.sourceW || 0;
+  let h = src.naturalHeight || src.height || logo.sourceH || 0;
   let lum = 0.5;
   if(w && h){
     try{
@@ -1086,7 +1171,8 @@ function strokeSprite(logo, dispW, dispH){
   if(rExp <= 0) return null;
   const color = logo.strokeAuto ? autoStrokeColor(logo) : (logo.strokeColor || STROKE_LIGHT);
   const src = logo.processed || logo.img;
-  const sw = src.naturalWidth || src.width || 1, sh = src.naturalHeight || src.height || 1;
+  const sw = src.naturalWidth || src.width || logo.sourceW || 1;
+  const sh = src.naturalHeight || src.height || logo.sourceH || 1;
 
   // 工作分辨率：贴近显示尺寸，上限 1024 以控制计算量
   const k = clamp(Math.max(dispW, dispH), 96, 1024) / Math.max(sw, sh);
@@ -1233,6 +1319,23 @@ function select(id){
 }
 function cur(){ return state.logos.find(l=>l.id===state.selected)||null; }
 
+function syncSizeUI(logo, preserveInputId){
+  if(!logo) return;
+  const percent = Math.round(logo.scale*100);
+  $("sizeRange").value = percent;
+  $("sizeVal").textContent = percent+"%";
+  if(preserveInputId !== "sizeWidth") $("sizeWidth").value = Math.round(logo.baseW*logo.scale);
+  if(preserveInputId !== "sizeHeight") $("sizeHeight").value = Math.round(logo.baseH*logo.scale);
+}
+
+function syncPositionUI(logo){
+  if(!logo) return;
+  const width = logo.baseW*logo.scale;
+  const height = logo.baseH*logo.scale;
+  $("positionX").value = Math.round(logo.x-width/2);
+  $("positionY").value = Math.round(logo.y-height/2);
+}
+
 function syncEditor(){
   const logo = cur();
   const on = !!logo;
@@ -1240,8 +1343,8 @@ function syncEditor(){
   $("objEditor").classList.toggle("hidden", !on);
   if(!on) return;
   $("objName").textContent = logo.name;
-  $("sizeRange").value = Math.round(logo.scale*100);
-  $("sizeVal").textContent = Math.round(logo.scale*100)+"%";
+  syncSizeUI(logo);
+  syncPositionUI(logo);
   $("opacityRange").value = Math.round(logo.opacity*100);
   $("opacityVal").textContent = Math.round(logo.opacity*100)+"%";
   $("rotateRange").value = logo.rotation;
@@ -1324,6 +1427,7 @@ canvas.addEventListener("pointermove", e=>{
     if(l){
       l.x = clamp(p.x-state.dragOffX, 0, EXPORT_W);
       l.y = clamp(p.y-state.dragOffY, 0, EXPORT_H);
+      syncPositionUI(l);
       render();
     }
     return;
@@ -1338,8 +1442,8 @@ canvas.addEventListener("wheel", e=>{
   if(state.selected==null) return;
   const l = cur(); if(!l) return;
   e.preventDefault();
-  l.scale = clamp(l.scale*(e.deltaY<0?1.08:0.92), 0.05, 5);
-  syncEditor(); render();
+  l.scale = clamp(l.scale*(e.deltaY<0?1.08:0.92), 0.05, 3);
+  syncEditor(); renderLayers(); render();
 }, {passive:false});
 /* 键盘：方向键微调选中图层的位置。
    单击 = 1 个导出画布像素；按住后自动重复，重复间隔越来越短、步长越来越大。
@@ -1416,7 +1520,46 @@ function moveLayer(dir){
 }
 
 /* ================= 控件 ================= */
-$("sizeRange").oninput = e=>{ const l=cur(); if(!l) return; l.scale=e.target.value/100; $("sizeVal").textContent=e.target.value+"%"; render(); };
+$("sizeRange").oninput = e=>{
+  const l=cur(); if(!l) return;
+  l.scale=e.target.value/100;
+  syncSizeUI(l); syncPositionUI(l); renderLayers(); render();
+};
+function setSizeFromInput(dimension, input){
+  const l = cur(), value = input.valueAsNumber;
+  if(!l || !Number.isFinite(value)) return;
+  const base = dimension === "width" ? l.baseW : l.baseH;
+  l.scale = clamp(value/base, 0.05, 3);
+  syncSizeUI(l, input.id); syncPositionUI(l); renderLayers(); render();
+}
+function commitSizeInput(dimension, input){
+  const l = cur();
+  if(!l) return;
+  const value = input.valueAsNumber;
+  if(Number.isFinite(value)){
+    const base = dimension === "width" ? l.baseW : l.baseH;
+    l.scale = clamp(value/base, 0.05, 3);
+  }
+  // 输入过程中允许暂时为空或超出范围，失焦时才恢复为合法值。
+  syncSizeUI(l); syncPositionUI(l); renderLayers(); render();
+}
+$("sizeWidth").oninput = e=>setSizeFromInput("width", e.target);
+$("sizeHeight").oninput = e=>setSizeFromInput("height", e.target);
+$("sizeWidth").onblur = e=>commitSizeInput("width", e.target);
+$("sizeHeight").onblur = e=>commitSizeInput("height", e.target);
+function setPositionFromInput(axis, input){
+  const l = cur(), value = input.valueAsNumber;
+  if(!l || !Number.isFinite(value)) return;
+  const max = axis === "x" ? EXPORT_W : EXPORT_H;
+  const size = axis === "x" ? l.baseW*l.scale : l.baseH*l.scale;
+  // UI 使用 Logo 外框左上角坐标；画布内部仍使用中心点锚定绘制。
+  l[axis] = clamp(Math.round(value)+size/2, 0, max);
+  syncPositionUI(l);
+  render();
+}
+$("positionX").oninput = e=>setPositionFromInput("x", e.target);
+$("positionY").oninput = e=>setPositionFromInput("y", e.target);
+$("positionX").onchange = $("positionY").onchange = ()=>{ const l=cur(); if(l) syncPositionUI(l); };
 $("opacityRange").oninput = e=>{ const l=cur(); if(!l) return; l.opacity=e.target.value/100; $("opacityVal").textContent=e.target.value+"%"; renderLayers(); render(); };
 $("rotateRange").oninput = e=>{ const l=cur(); if(!l) return; l.rotation=+e.target.value; $("rotateVal").textContent=e.target.value+"°"; render(); };
 $("bgRemove").onchange = e=>{
