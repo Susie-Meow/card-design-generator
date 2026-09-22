@@ -75,3 +75,10 @@ ISO 7810 ID-1 就是银行卡、交通卡用的那套规格：85.60 × 53.98 mm�
 ## 实现方式
 
 单个 `index.html`，原生 Canvas 2D，没有框架、没有依赖、也没有构建步骤。字体走 Google Fonts，加载不到会退回系统字体，不影响功能。
+
+## License
+
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
+Users are responsible for ensuring that they have the necessary rights
+to use any third-party images, logos, or other assets they upload.
