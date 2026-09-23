@@ -290,6 +290,73 @@ header.top{
   font-size:var(--fs-sm);font-weight:500;color:var(--steel);margin-bottom:4px;
 }
 .field-h .v{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.position-grid,.size-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.size-grid{margin-top:5px}
+
+/* ---------- 位置十字方向键 ---------- */
+.cross-pad{
+  display:grid;
+  grid-template-columns:auto auto auto;
+  grid-template-rows:auto auto auto;
+  grid-template-areas:
+    ".    t    ."
+    "l    hub  r"
+    ".    b    .";
+  gap:6px 8px; justify-content:center; align-items:center;
+  margin:4px auto 0;
+}
+.cross-arm{
+  display:flex; align-items:center; justify-content:center; gap:3px;
+  padding:2px; background:var(--fill-soft);
+  border:1px solid var(--rule); border-radius:var(--radius);
+}
+.cross-arm.vertical{flex-direction:column; min-width:72px}
+.cross-arm.vertical.top{grid-area:t}
+.cross-arm.horizontal.left{grid-area:l}
+.cross-arm.horizontal.right{grid-area:r}
+.cross-arm.vertical.bottom{grid-area:b}
+.arm-btn{
+  width:24px; height:24px; flex:0 0 auto;
+  display:grid; place-items:center;
+  border:1px solid var(--rule); border-radius:2px; background:var(--panel);
+  color:var(--ink-2); font-size:11px; line-height:1; cursor:pointer;
+  transition:background .12s,color .12s,border-color .12s;
+}
+.arm-btn:hover{background:var(--signal-soft);color:var(--signal);border-color:var(--signal-rule)}
+.arm-btn:active{background:var(--signal);color:#fff;border-color:var(--signal)}
+.arm-btn:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.arm-val{display:flex;align-items:center;gap:3px}
+.arm-val .axis{font-weight:700;color:var(--ink-2);font-size:11px;font-variant-numeric:tabular-nums}
+.arm-val input{
+  width:32px;min-width:0;padding:2px 0;border:0;border-radius:2px;outline:0;background:transparent;
+  color:var(--ink);font-weight:600;text-align:center;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield;
+  transition:background .12s;
+}
+.arm-val input:hover{background:var(--hover)}
+.arm-val input::-webkit-outer-spin-button,
+.arm-val input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.arm-val input:focus-visible{outline:2px solid var(--signal);outline-offset:1px;border-radius:2px}
+.arm-val .unit{font-size:10px;color:var(--steel-2)}
+.cross-hub{
+  grid-area:hub; width:34px;height:34px;
+  display:grid;place-items:center;
+  justify-self:center;align-self:center;   /* 固定尺寸项默认贴列左，需显式水平居中 */
+  background:none;box-shadow:none;
+}
+.cross-hub .icon{width:16px;height:16px;stroke:#000000;stroke-width:1.4}
+.coord-input{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px;
+  height:32px;padding:0 9px;border:1px solid var(--rule-strong);border-radius:var(--radius);
+  background:var(--panel);color:var(--steel);font-size:var(--fs-sm);
+}
+.coord-input:focus-within{border-color:var(--signal);box-shadow:0 0 0 1px var(--signal)}
+.coord-input .axis{font-weight:700;color:var(--ink-2)}
+.coord-input .unit{font-size:var(--fs-xs);color:var(--steel-2)}
+.coord-input input{
+  width:100%;min-width:0;padding:0;border:0;outline:0;background:transparent;
+  color:var(--ink);font-weight:600;text-align:right;font-variant-numeric:tabular-nums;
+}
 /* 命中区 26px（轨道仍 3px）：原先 16px 在触屏上难以拖动 */
 input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;
@@ -592,6 +659,49 @@ input[type=color]:disabled{opacity:.8;cursor:not-allowed;border-style:dashed}
           <input type="range" id="sizeRange" min="5" max="300" step="1" value="100">
         </div>
         <div class="field">
+          <div class="field-h">
+            <span data-i18n="adj.position">位置</span>
+            <span class="v" id="posCoord">0, 0</span>
+          </div>
+          <div class="cross-pad" role="group" aria-label="logo 位置">
+            <div class="cross-arm vertical top">
+              <span class="arm-val">
+                <span class="axis">Y</span>
+                <input type="number" data-coord="y" step="1" value="0" data-i18n-aria="adj.positionY" aria-label="Logo 中心 Y 坐标">
+                <span class="unit">px</span>
+              </span>
+              <button type="button" class="arm-btn" data-axis="y" data-dir="-1" data-i18n-aria="adj.yDec">▲</button>
+            </div>
+            <div class="cross-arm horizontal left">
+              <span class="arm-val">
+                <span class="axis">X</span>
+                <input type="number" data-coord="x" step="1" value="0" data-i18n-aria="adj.positionX" aria-label="Logo 中心 X 坐标">
+                <span class="unit">px</span>
+              </span>
+              <button type="button" class="arm-btn" data-axis="x" data-dir="-1" data-i18n-aria="adj.xDec">◀</button>
+            </div>
+            <div class="cross-hub" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.4"/><path d="M8 0.5v15M0.5 8h15"/></svg>
+            </div>
+            <div class="cross-arm horizontal right">
+              <button type="button" class="arm-btn" data-axis="x" data-dir="1" data-i18n-aria="adj.xInc">▶</button>
+              <span class="arm-val">
+                <span class="axis">X</span>
+                <input type="number" data-coord="x" step="1" value="0" data-i18n-aria="adj.positionX" aria-label="Logo 中心 X 坐标">
+                <span class="unit">px</span>
+              </span>
+            </div>
+            <div class="cross-arm vertical bottom">
+              <button type="button" class="arm-btn" data-axis="y" data-dir="1" data-i18n-aria="adj.yInc">▼</button>
+              <span class="arm-val">
+                <span class="axis">Y</span>
+                <input type="number" data-coord="y" step="1" value="0" data-i18n-aria="adj.positionY" aria-label="Logo 中心 Y 坐标">
+                <span class="unit">px</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
           <div class="field-h"><span data-i18n="adj.opacity">不透明度</span><span class="v" id="opacityVal">100%</span></div>
           <input type="range" id="opacityRange" min="0" max="100" step="1" value="100">
         </div>
@@ -751,7 +861,10 @@ const I18N = {
     "ref.drop.title":"拖拽图片到此处，或点击选择","ref.drop.hint":"JPG、PNG、WebP、SVG",
     "ref.drop.aria":"上传参考图","ref.show":"显示参考图",
     "ref.tip":"参考图按 1.586 : 1 匹配后<b>叠在卡面之上、logo 之下</b>，只用于对位和比稿，<b>不会出现在导出的 PNG 里</b>。",
-    "adj.empty":"点击卡面上的 logo 进行编辑","adj.size":"大小","adj.opacity":"不透明度",
+    "adj.empty":"点击卡面上的 logo 进行编辑","adj.size":"大小","adj.position":"位置",
+    "adj.positionX":"Logo 中心 X 坐标","adj.positionY":"Logo 中心 Y 坐标",
+    "adj.xDec":"X 减小","adj.xInc":"X 增大","adj.yDec":"Y 减小","adj.yInc":"Y 增大",
+    "adj.opacity":"不透明度",
     "adj.rotation":"旋转","adj.nudge":"方向键微调位置。",
     "adj.removeBg":"去除背景底色","adj.tolerance":"去底容差",
     "adj.stroke":"外描边","adj.strokeWidth":"描边宽度","adj.strokeColor":"描边颜色",
@@ -793,7 +906,10 @@ const I18N = {
     "ref.drop.title":"Drop an image here, or click to choose","ref.drop.hint":"JPG, PNG, WebP, SVG",
     "ref.drop.aria":"Upload the reference image","ref.show":"Show reference",
     "ref.tip":"The reference is fitted to 1.586 : 1 and <b>laid over the card, beneath the logos</b>, for alignment and comparison only — it is <b>never included in the exported PNG</b>.",
-    "adj.empty":"Click a logo on the card to edit it","adj.size":"Size","adj.opacity":"Opacity",
+    "adj.empty":"Click a logo on the card to edit it","adj.size":"Size","adj.position":"Position",
+    "adj.positionX":"Logo centre X coordinate","adj.positionY":"Logo centre Y coordinate",
+    "adj.xDec":"Decrease X","adj.xInc":"Increase X","adj.yDec":"Decrease Y","adj.yInc":"Increase Y",
+    "adj.opacity":"Opacity",
     "adj.rotation":"Rotation","adj.nudge":"Arrow keys nudge the position.",
     "adj.removeBg":"Remove background colour","adj.tolerance":"Tolerance",
     "adj.stroke":"Outline","adj.strokeWidth":"Outline width","adj.strokeColor":"Outline colour",
@@ -926,17 +1042,57 @@ async function handleRefFile(file){
 }
 
 /* ================= Logo ================= */
-async function addLogoFromUrl(url, name){
+function svgLength(value){
+  const text = String(value||"").trim();
+  if(!text || text.endsWith("%")) return 0;
+  const valueNumber = Number.parseFloat(text);
+  return Number.isFinite(valueNumber) && valueNumber > 0 ? valueNumber : 0;
+}
+
+async function prepareLogoFile(file){
+  if(file.type !== "image/svg+xml" && !/\.svg$/i.test(file.name||"")){
+    return { url:URL.createObjectURL(file), size:null };
+  }
+  try{
+    const doc = new DOMParser().parseFromString(await file.text(), "image/svg+xml");
+    const svg = doc.documentElement;
+    if(svg.localName !== "svg" || doc.querySelector("parsererror")) throw new Error("invalid svg");
+
+    const viewBox = (svg.getAttribute("viewBox")||"").trim().split(/[\s,]+/).map(Number);
+    const vbW = viewBox.length===4 && Number.isFinite(viewBox[2]) && viewBox[2]>0 ? viewBox[2] : 0;
+    const vbH = viewBox.length===4 && Number.isFinite(viewBox[3]) && viewBox[3]>0 ? viewBox[3] : 0;
+    const attrW = svgLength(svg.getAttribute("width"));
+    const attrH = svgLength(svg.getAttribute("height"));
+    const ratioW = vbW || attrW || 300;
+    const ratioH = vbH || attrH || 150;
+
+    // 没有明确像素尺寸的 SVG（常见于仅含 viewBox 或 width="100%"）在部分浏览器中
+    // naturalWidth / naturalHeight 会是 0。补上只影响视口、不改变图形比例的固有尺寸。
+    if(!attrW || !attrH){
+      const scale = 1024/Math.max(ratioW, ratioH);
+      svg.setAttribute("width", String(Math.max(1, Math.round(ratioW*scale))));
+      svg.setAttribute("height", String(Math.max(1, Math.round(ratioH*scale))));
+    }
+    const normalized = new Blob([new XMLSerializer().serializeToString(doc)], {type:"image/svg+xml"});
+    return { url:URL.createObjectURL(normalized), size:{width:ratioW, height:ratioH} };
+  }catch(e){
+    return { url:URL.createObjectURL(file), size:null };
+  }
+}
+
+async function addLogoFromUrl(url, name, sourceSize){
   let img;
   try{ img = await loadImage(url); }catch(e){ toast(t("toast.loadFail")); return; }
-  const maxDim = Math.max(img.naturalWidth||img.width, img.naturalHeight||img.height, 1);
+  const sourceW = Number(sourceSize?.width) || img.naturalWidth || img.width || 300;
+  const sourceH = Number(sourceSize?.height) || img.naturalHeight || img.height || 150;
+  const maxDim = Math.max(sourceW, sourceH, 1);
   const s = (EXPORT_W*0.42)/maxDim;
-  const bw = (img.naturalWidth||img.width)*s, bh = (img.naturalHeight||img.height)*s;
+  const bw = sourceW*s, bh = sourceH*s;
   const logo = {
     id:nid(), name:name||"Logo", img, processed:null, srcUrl:url,
     x:EXPORT_W/2, y:EXPORT_H/2,            // 中心点锚点
-    baseW:bw, baseH:bh,
-    scale:1, rotation:0, opacity:1, removeBg:false, tolerance:24,
+    baseW:bw, baseH:bh, sourceW, sourceH,
+    scaleX:1, scaleY:1, rotation:0, opacity:1, removeBg:false, tolerance:24,
     // 描边：默认开启、自动对比色，宽度随 logo 尺寸给出合理初值
     strokeOn:true, strokeWidth:Math.round(clamp(Math.min(bw,bh)*0.035, 3, 8)),
     strokeAuto:true, strokeColor:"#FFFFFF",
@@ -955,7 +1111,8 @@ async function addLogoFiles(fileList){
   const dz = $("logoDrop");
   dz.classList.add("busy");
   for(const f of files){
-    await addLogoFromUrl(URL.createObjectURL(f), f.name.replace(/\.[^.]+$/,""));
+    const prepared = await prepareLogoFile(f);
+    await addLogoFromUrl(prepared.url, f.name.replace(/\.[^.]+$/,""), prepared.size);
   }
   dz.classList.remove("busy");
   if(files.length > 1){
@@ -970,7 +1127,7 @@ function processRemoveBg(logo){
   logo._autoColor = null;
   if(!logo.removeBg){ logo.processed = null; return; }
   const img = logo.img;
-  const w = img.naturalWidth||img.width, h = img.naturalHeight||img.height;
+  const w = img.naturalWidth||img.width||logo.sourceW, h = img.naturalHeight||img.height||logo.sourceH;
   const c = document.createElement("canvas"); c.width=w; c.height=h;
   const cx = c.getContext("2d");
   cx.drawImage(img,0,0);
@@ -1056,7 +1213,8 @@ const STROKE_DARK = "#111A2B", STROKE_LIGHT = "#FFFFFF";
 function autoStrokeColor(logo){
   if(logo._autoColor) return logo._autoColor;
   const src = logo.processed || logo.img;
-  let w = src.naturalWidth || src.width || 0, h = src.naturalHeight || src.height || 0;
+  let w = src.naturalWidth || src.width || logo.sourceW || 0;
+  let h = src.naturalHeight || src.height || logo.sourceH || 0;
   let lum = 0.5;
   if(w && h){
     try{
@@ -1086,7 +1244,8 @@ function strokeSprite(logo, dispW, dispH){
   if(rExp <= 0) return null;
   const color = logo.strokeAuto ? autoStrokeColor(logo) : (logo.strokeColor || STROKE_LIGHT);
   const src = logo.processed || logo.img;
-  const sw = src.naturalWidth || src.width || 1, sh = src.naturalHeight || src.height || 1;
+  const sw = src.naturalWidth || src.width || logo.sourceW || 1;
+  const sh = src.naturalHeight || src.height || logo.sourceH || 1;
 
   // 工作分辨率：贴近显示尺寸，上限 1024 以控制计算量
   const k = clamp(Math.max(dispW, dispH), 96, 1024) / Math.max(sw, sh);
@@ -1184,7 +1343,7 @@ function render(){
 
 function drawLogoArt(dc, logo){
   const src = logo.processed || logo.img;
-  const w = logo.baseW*logo.scale, h = logo.baseH*logo.scale;
+  const w = logo.baseW*logo.scaleX, h = logo.baseH*logo.scaleY;
   dc.save();
   dc.globalAlpha = logo.opacity;
   dc.translate(logo.x, logo.y);
@@ -1205,7 +1364,7 @@ function drawLogoArt(dc, logo){
 function drawLogoChrome(logo){
   const isSel = state.selected===logo.id, isHov = state.hover===logo.id;
   if(!isSel && !isHov) return;
-  const w = logo.baseW*logo.scale, h = logo.baseH*logo.scale;
+  const w = logo.baseW*logo.scaleX, h = logo.baseH*logo.scaleY;
   ctx.save();
   ctx.translate(logo.x, logo.y);
   if(logo.rotation) ctx.rotate(deg2rad(logo.rotation));
@@ -1233,6 +1392,23 @@ function select(id){
 }
 function cur(){ return state.logos.find(l=>l.id===state.selected)||null; }
 
+function syncSizeUI(logo){
+  if(!logo) return;
+  const s = Math.round((logo.scaleX + logo.scaleY)/2 * 100);
+  $("sizeRange").value = s;
+  $("sizeVal").textContent = s+"%";
+}
+
+/* 位置十字方向键：上/下独立调节 Y、左/右独立调节 X（画布像素，左上原点）。
+   四处数值都是同一对 X/Y 的镜像显示，编辑任一处都会同步到其余各处。 */
+function syncPosUI(logo){
+  if(!logo) return;
+  const x = Math.round(logo.x), y = Math.round(logo.y);
+  document.querySelectorAll('[data-coord="x"]').forEach(el=>el.value = x);
+  document.querySelectorAll('[data-coord="y"]').forEach(el=>el.value = y);
+  const pc = $("posCoord"); if(pc) pc.textContent = x+", "+y;
+}
+
 function syncEditor(){
   const logo = cur();
   const on = !!logo;
@@ -1240,8 +1416,8 @@ function syncEditor(){
   $("objEditor").classList.toggle("hidden", !on);
   if(!on) return;
   $("objName").textContent = logo.name;
-  $("sizeRange").value = Math.round(logo.scale*100);
-  $("sizeVal").textContent = Math.round(logo.scale*100)+"%";
+  syncSizeUI(logo);
+  syncPosUI(logo);
   $("opacityRange").value = Math.round(logo.opacity*100);
   $("opacityVal").textContent = Math.round(logo.opacity*100)+"%";
   $("rotateRange").value = logo.rotation;
@@ -1283,7 +1459,7 @@ function renderLayers(){
     d.setAttribute("aria-label", logo.name);
     const thumb = logo.processed ? logo.processed.toDataURL() : logo.srcUrl;
     d.innerHTML = `<div class="th"><img src="${thumb}" alt=""></div>
-      <div class="nm">${logo.name}<br><small>${Math.round(logo.scale*100)}%</small></div>
+      <div class="nm">${logo.name}<br><small>${Math.round((logo.scaleX+logo.scaleY)/2*100)}%</small></div>
       <span style="color:var(--steel);font-size:var(--fs-xs)">${logo.opacity>0?"":"○"}</span>`;
     d.onclick = ()=> select(logo.id);
     keyActivate(d, ()=> select(logo.id));
@@ -1299,7 +1475,7 @@ function getCanvasPos(e){
 function hitLogo(p){
   for(let i=state.logos.length-1;i>=0;i--){
     const l = state.logos[i];
-    const w = l.baseW*l.scale, h = l.baseH*l.scale;
+    const w = l.baseW*l.scaleX, h = l.baseH*l.scaleY;
     const dx = p.x-l.x, dy = p.y-l.y;
     const c = Math.cos(-deg2rad(l.rotation)), s = Math.sin(-deg2rad(l.rotation));
     const lx = dx*c - dy*s, ly = dx*s + dy*c;
@@ -1324,6 +1500,7 @@ canvas.addEventListener("pointermove", e=>{
     if(l){
       l.x = clamp(p.x-state.dragOffX, 0, EXPORT_W);
       l.y = clamp(p.y-state.dragOffY, 0, EXPORT_H);
+      syncPosUI(l);
       render();
     }
     return;
@@ -1338,8 +1515,10 @@ canvas.addEventListener("wheel", e=>{
   if(state.selected==null) return;
   const l = cur(); if(!l) return;
   e.preventDefault();
-  l.scale = clamp(l.scale*(e.deltaY<0?1.08:0.92), 0.05, 5);
-  syncEditor(); render();
+  const f = e.deltaY<0?1.08:0.92;
+  l.scaleX = clamp(l.scaleX*f, 0.05, 3);
+  l.scaleY = clamp(l.scaleY*f, 0.05, 3);
+  syncEditor(); renderLayers(); render();
 }, {passive:false});
 /* 键盘：方向键微调选中图层的位置。
    单击 = 1 个导出画布像素；按住后自动重复，重复间隔越来越短、步长越来越大。
@@ -1362,7 +1541,7 @@ function nudgeMove(key, step){
   const [dx,dy] = ARROW[key];
   l.x = clamp(l.x + dx*step, 0, EXPORT_W);
   l.y = clamp(l.y + dy*step, 0, EXPORT_H);
-  render();
+  syncPosUI(l); render();
 }
 function nudgeTick(){
   if(!cur()){ nudgeStop(); return; }        // 图层被删掉或取消选中就停
@@ -1416,7 +1595,56 @@ function moveLayer(dir){
 }
 
 /* ================= 控件 ================= */
-$("sizeRange").oninput = e=>{ const l=cur(); if(!l) return; l.scale=e.target.value/100; $("sizeVal").textContent=e.target.value+"%"; render(); };
+$("sizeRange").oninput = e=>{
+  const l=cur(); if(!l) return;
+  const s = clamp(e.target.value/100, 0.05, 3);   // 等比缩放，保持中心不动
+  l.scaleX = s; l.scaleY = s;
+  syncSizeUI(l); syncPosUI(l); renderLayers(); render();
+};
+/* 位置十字方向键：上/下独立调节 Y，左/右独立调节 X（中心点坐标，画布像素）。
+   每个方向只改一个坐标分量，互不影响；长按自动重复，时序沿用方向键微调。 */
+function nudgePos(axis, dir){
+  const l = cur(); if(!l) return;
+  const max = axis==="x" ? EXPORT_W : EXPORT_H;
+  l[axis] = clamp(Math.round(l[axis]) + dir, 0, max);
+  syncPosUI(l); render();
+}
+function setPosFromInput(axis, input){
+  const l = cur(), v = input.valueAsNumber;
+  if(!l || !Number.isFinite(v)) return;
+  const max = axis==="x" ? EXPORT_W : EXPORT_H;
+  l[axis] = clamp(Math.round(v), 0, max);
+  syncPosUI(l); render();
+}
+document.querySelectorAll("[data-coord]").forEach(inp=>{
+  const axis = inp.dataset.coord;
+  inp.addEventListener("input", ()=>setPosFromInput(axis, inp));
+  inp.addEventListener("change", ()=>{ const l=cur(); if(l) syncPosUI(l); });
+});
+const armHold = { axis:null, dir:0, t0:0, timer:0 };
+function armStep(held){ if(held<600) return 1; return Math.min(16, Math.pow(2, Math.floor((held-600)/700))); }
+function armDelay(held){ if(held<320) return 320-held; return Math.max(14, 90*Math.pow(0.88,(held-320)/90)); }
+function armTick(){
+  const l=cur(); if(!l){ armStop(); return; }
+  nudgePos(armHold.axis, armHold.dir*armStep(performance.now()-armHold.t0));
+  armHold.timer = setTimeout(armTick, armDelay(performance.now()-armHold.t0));
+}
+function armStop(){ if(armHold.timer) clearTimeout(armHold.timer); armHold.timer=0; armHold.axis=null; }
+function armStart(axis, dir){
+  armStop();
+  armHold.axis=axis; armHold.dir=dir; armHold.t0=performance.now();
+  nudgePos(axis, dir);
+  armHold.timer = setTimeout(armTick, armDelay(0));
+}
+document.querySelectorAll(".arm-btn").forEach(b=>{
+  const axis=b.dataset.axis, dir=+b.dataset.dir;
+  b.addEventListener("pointerdown", e=>{ e.preventDefault(); b._pd=true; armStart(axis, dir); });
+  b.addEventListener("pointerup", ()=>armStop());
+  b.addEventListener("pointerleave", ()=>armStop());
+  b.addEventListener("pointercancel", ()=>armStop());
+  b.addEventListener("click", ()=>{ if(b._pd){ b._pd=false; return; } nudgePos(axis, dir); });
+});
+window.addEventListener("blur", armStop);
 $("opacityRange").oninput = e=>{ const l=cur(); if(!l) return; l.opacity=e.target.value/100; $("opacityVal").textContent=e.target.value+"%"; renderLayers(); render(); };
 $("rotateRange").oninput = e=>{ const l=cur(); if(!l) return; l.rotation=+e.target.value; $("rotateVal").textContent=e.target.value+"°"; render(); };
 $("bgRemove").onchange = e=>{
